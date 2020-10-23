@@ -1,0 +1,61 @@
+---
+title: "Testo Assignment 2"
+author: "Sivert Jakobsen"
+date: "21 10 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Hypotese for oppgave 
+
+Jeg forventer at HIGH gruppen har høyere Testosteron forandring enn LOW gruppen
+
+Hvis prosentandelen i forskjell mellom high og low respondere 
+er stor nok, så er mest sannsynlig svaret reliabelt. Stor nok vil si at
+jeg setter p-verdien til 0.005.
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+### Last inn packages #######
+library(tidyverse)
+library(readr)
+
+### Last inn data og legg det i en mappe kalt "data"######
+testo <- read_csv("./data/hypertrophy.csv")
+
+### Data av interesse ######
+var_interest <- c("CLUSTER", "T3T1__TESTOSTERONE_ngdl")
+
+### Fjern NA og sorter#####
+testo1 <- testo %>%
+  select(all_of(var_interest)) %>%
+  mutate(CLUSTER = factor(CLUSTER, levels = c("LOW", "HIGH"))) %>%
+  drop_na(CLUSTER, T3T1__TESTOSTERONE_ngdl)
+
+### Kjør t-test ########
+test <- t.test(T3T1__TESTOSTERONE_ngdl ~ CLUSTER, paired = FALSE, data = testo1)
+
+t <- round(test$statistic, 2)
+df <- round(test$parameter, 1)
+p <- round(test$p.value, 3)
+
+estimate <- round(test$estimate[1] - test$estimate[2], 1)
+
+cil <- round(test$conf.int[1], 1)
+ciu <- round(test$conf.int[2], 1)
+
+### Lage ny variabel som inneholder verdiene fra HIGH og LOW i T1T3_TESTOSTERON ######
+high1 <- testo1[testo1$CLUSTER == "HIGH",]$T3T1__TESTOSTERONE_ngdl
+
+low1 <- testo1[testo1$CLUSTER == "LOW",]$T3T1__TESTOSTERONE_ngdl
+
+### Forskjell mellom HIGH og LOW responders #####
+testo1 %>%
+  ggplot(aes(CLUSTER, T3T1__TESTOSTERONE_ngdl)) + geom_boxplot()
+  
+```
+
+## Konklusjon 
+
+Vi konkluderer at HIGH ikke har forskjell fra LOW i Testosteron forandring fra T1 til T3 (mean difference, `r estimate`, 95% CI [`r cil`, `r ciu`]; t(`r df`) = `r t`, p = `r p`)
